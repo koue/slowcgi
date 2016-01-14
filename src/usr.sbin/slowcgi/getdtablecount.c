@@ -40,7 +40,7 @@
 #include <sys/user.h>
 #include <libprocstat.h>
 
-#include <getdtablecount.h>
+#include "getdtablecount.h"
 
 int
 getdtablecount(void) {
