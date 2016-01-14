@@ -39,6 +39,8 @@
 #include <syslog.h>
 #include <unistd.h>
 
+#include <getdtablecount.h>
+
 #define TIMEOUT_DEFAULT		 120
 #define SLOWCGI_USER		 "www"
 
@@ -336,8 +338,10 @@ main(int argc, char *argv[])
 	    setresuid(pw->pw_uid, pw->pw_uid, pw->pw_uid))
 		lerr(1, "unable to revoke privs");
 
+#ifdef __OpenBSD__
 	if (pledge("stdio rpath unix proc exec", NULL) == -1)
 		lerr(1, "pledge");
+#endif
 
 	SLIST_INIT(&slowcgi_proc.requests);
 	event_init();
@@ -886,8 +890,10 @@ exec_cgi(struct request *c)
 		return;
 	case 0:
 		/* Child process */
+#ifdef __OpenBSD__
 		if (pledge("stdio rpath exec", NULL) == -1)
 			lerr(1, "pledge");
+#endif
 		close(s_in[0]);
 		close(s_out[0]);
 		close(s_err[0]);
