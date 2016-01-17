@@ -19,6 +19,7 @@
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/queue.h>
+#include <sys/param.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -39,7 +40,7 @@
 #include <syslog.h>
 #include <unistd.h>
 
-#include <getdtablecount.h>
+#include "getdtablecount.h"
 
 #define TIMEOUT_DEFAULT		 120
 #define SLOWCGI_USER		 "www"
@@ -73,6 +74,15 @@
 
 #define FD_RESERVE		5
 #define FD_NEEDED		6
+
+#ifndef SOCK_CLOEXEC
+#define SOCK_CLOEXEC		0x10000000
+#endif
+
+#ifndef SOCK_NONBLOCK
+#define SOCK_NONBLOCK		0x20000000
+#endif
+
 int cgi_inflight = 0;
 
 struct listener {
@@ -424,8 +434,12 @@ accept_reserve(int sockfd, struct sockaddr *addr, socklen_t *addrlen,
 		return -1;
 	}
 
+#if __FreeBSD_version < 1000000
+	if ((ret = accept(sockfd, addr, addrlen)) > -1) {
+#else
 	if ((ret = accept4(sockfd, addr, addrlen, SOCK_NONBLOCK | SOCK_CLOEXEC))
 	    > -1) {
+#endif
 		(*counter)++;
 		ldebug("inflight incremented, now %d", *counter);
 	}
