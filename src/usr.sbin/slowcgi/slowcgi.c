@@ -1,4 +1,4 @@
-/*	$OpenBSD: slowcgi.c,v 1.48 2015/11/20 09:04:01 tb Exp $ */
+/*	$OpenBSD: slowcgi.c,v 1.50 2016/09/04 14:40:34 florian Exp $ */
 /*
  * Copyright (c) 2013 David Gwynne <dlg@openbsd.org>
  * Copyright (c) 2013 Florian Obser <florian@openbsd.org>
@@ -46,6 +46,10 @@
 #define FCGI_PADDING_SIZE	 255
 #define FCGI_RECORD_SIZE	 \
     (sizeof(struct fcgi_record_header) + FCGI_CONTENT_SIZE + FCGI_PADDING_SIZE)
+
+#define FCGI_ALIGNMENT		 8
+#define FCGI_ALIGN(n)		 \
+    (((n) + (FCGI_ALIGNMENT - 1)) & ~(FCGI_ALIGNMENT - 1))
 
 #define STDOUT_DONE		 1
 #define STDERR_DONE		 2
@@ -192,12 +196,18 @@ void		dump_fcgi_end_request_body(const char *,
 void		cleanup_request(struct request *);
 
 struct loggers {
-	__dead void (*err)(int, const char *, ...);
-	__dead void (*errx)(int, const char *, ...);
-	void (*warn)(const char *, ...);
-	void (*warnx)(const char *, ...);
-	void (*info)(const char *, ...);
-	void (*debug)(const char *, ...);
+	__dead void (*err)(int, const char *, ...)
+	    __attribute__((__format__ (printf, 2, 3)));
+	__dead void (*errx)(int, const char *, ...)
+	    __attribute__((__format__ (printf, 2, 3)));
+	void (*warn)(const char *, ...)
+	    __attribute__((__format__ (printf, 1, 2)));
+	void (*warnx)(const char *, ...)
+	    __attribute__((__format__ (printf, 1, 2)));
+	void (*info)(const char *, ...)
+	    __attribute__((__format__ (printf, 1, 2)));
+	void (*debug)(const char *, ...)
+	    __attribute__((__format__ (printf, 1, 2)));
 };
 
 const struct loggers conslogger = {
@@ -209,13 +219,20 @@ const struct loggers conslogger = {
 	warnx /* debug */
 };
 
-__dead void	syslog_err(int, const char *, ...);
-__dead void	syslog_errx(int, const char *, ...);
-void		syslog_warn(const char *, ...);
-void		syslog_warnx(const char *, ...);
-void		syslog_info(const char *, ...);
-void		syslog_debug(const char *, ...);
-void		syslog_vstrerror(int, int, const char *, va_list);
+__dead void	syslog_err(int, const char *, ...)
+		    __attribute__((__format__ (printf, 2, 3)));
+__dead void	syslog_errx(int, const char *, ...)
+		    __attribute__((__format__ (printf, 2, 3)));
+void		syslog_warn(const char *, ...)
+		    __attribute__((__format__ (printf, 1, 2)));
+void		syslog_warnx(const char *, ...)
+		    __attribute__((__format__ (printf, 1, 2)));
+void		syslog_info(const char *, ...)
+		    __attribute__((__format__ (printf, 1, 2)));
+void		syslog_debug(const char *, ...)
+		    __attribute__((__format__ (printf, 1, 2)));
+void		syslog_vstrerror(int, int, const char *, va_list)
+		    __attribute__((__format__ (printf, 3, 0)));
 
 const struct loggers syslogger = {
 	syslog_err,
@@ -552,6 +569,21 @@ slowcgi_sig_handler(int sig, short event, void *arg)
 void
 slowcgi_add_response(struct request *c, struct fcgi_response *resp)
 {
+	struct fcgi_record_header	*header;
+	size_t				 padded_len;
+
+	header = (struct fcgi_record_header*)resp->data;
+
+	/* The FastCGI spec suggests to align the output buffer */
+	padded_len = FCGI_ALIGN(resp->data_len);
+	if (padded_len > resp->data_len) {
+		/* There should always be FCGI_PADDING_SIZE bytes left */
+		if (padded_len > FCGI_RECORD_SIZE)
+			lerr(1, "response too long");
+		header->padding_len = padded_len - resp->data_len;
+		resp->data_len = padded_len;
+	}
+
 	TAILQ_INSERT_TAIL(&c->response_head, resp, entry);
 	event_add(&c->resp_ev, NULL);
 }
@@ -659,7 +691,7 @@ parse_begin_request(uint8_t *buf, uint16_t n, struct request *c, uint16_t id)
 	}
 
 	if (n != sizeof(struct fcgi_begin_request_body)) {
-		lwarnx("wrong size %d != %d", n,
+		lwarnx("wrong size %d != %lu", n,
 		    sizeof(struct fcgi_begin_request_body));
 		return;
 	}
@@ -964,7 +996,7 @@ create_end_record(struct request *c)
 	struct fcgi_record_header	*header;
 	struct fcgi_end_request_body	*end_request;
 
-	if ((resp = malloc(sizeof(struct fcgi_response))) == NULL) {
+	if ((resp = calloc(1, sizeof(struct fcgi_response))) == NULL) {
 		lwarnx("cannot malloc fcgi_response");
 		return;
 	}
@@ -996,7 +1028,7 @@ script_in(int fd, struct event *ev, struct request *c, uint8_t type)
 	struct fcgi_record_header	*header;
 	ssize_t				 n;
 
-	if ((resp = malloc(sizeof(struct fcgi_response))) == NULL) {
+	if ((resp = calloc(1, sizeof(struct fcgi_response))) == NULL) {
 		lwarnx("cannot malloc fcgi_response");
 		return;
 	}
