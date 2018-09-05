@@ -1,4 +1,4 @@
-/*	$OpenBSD: slowcgi.c,v 1.50 2016/09/04 14:40:34 florian Exp $ */
+/*	$OpenBSD: slowcgi.c,v 1.54 2018/08/19 12:31:41 florian Exp $ */
 /*
  * Copyright (c) 2013 David Gwynne <dlg@openbsd.org>
  * Copyright (c) 2013 Florian Obser <florian@openbsd.org>
@@ -256,7 +256,8 @@ __dead void
 usage(void)
 {
 	extern char *__progname;
-	fprintf(stderr, "usage: %s [-d] [-p path] [-s socket] [-u user]\n",
+	fprintf(stderr,
+	    "usage: %s [-d] [-p path] [-s socket] [-U user] [-u user]\n",
 	    __progname);
 	exit(1);
 }
@@ -276,6 +277,7 @@ main(int argc, char *argv[])
 	struct stat	 sb;
 	int		 c, fd;
 	const char	*chrootpath = NULL;
+	const char	*sock_user = SLOWCGI_USER;
 	const char	*slowcgi_user = SLOWCGI_USER;
 
 	/*
@@ -295,7 +297,7 @@ main(int argc, char *argv[])
 		}
 	}
 
-	while ((c = getopt(argc, argv, "dp:s:u:")) != -1) {
+	while ((c = getopt(argc, argv, "dp:s:U:u:")) != -1) {
 		switch (c) {
 		case 'd':
 			debug = 1;
@@ -305,6 +307,9 @@ main(int argc, char *argv[])
 			break;
 		case 's':
 			fcgi_socket = optarg;
+			break;
+		case 'U':
+			sock_user = optarg;
 			break;
 		case 'u':
 			slowcgi_user = optarg;
@@ -318,7 +323,7 @@ main(int argc, char *argv[])
 	if (geteuid() != 0)
 		errx(1, "need root privileges");
 
-	if (!debug && daemon(1, 0) == -1)
+	if (!debug && daemon(0, 0) == -1)
 		err(1, "daemon");
 
 	if (!debug) {
@@ -326,13 +331,14 @@ main(int argc, char *argv[])
 		logger = &syslogger;
 	}
 
-	pw = getpwnam(SLOWCGI_USER);
+	ldebug("sock_user: %s", sock_user);
+	pw = getpwnam(sock_user);
 	if (pw == NULL)
-		lerrx(1, "no %s user", SLOWCGI_USER);
+		lerrx(1, "no %s user", sock_user);
 
 	fd = slowcgi_listen(fcgi_socket, pw);
 
-	lwarnx("slowcgi_user: %s", slowcgi_user);
+	ldebug("slowcgi_user: %s", slowcgi_user);
 	pw = getpwnam(slowcgi_user);
 	if (pw == NULL)
 		lerrx(1, "no %s user", slowcgi_user);
@@ -506,8 +512,8 @@ slowcgi_accept(int fd, short events, void *arg)
 	event_set(&c->ev, s, EV_READ | EV_PERSIST, slowcgi_request, c);
 	event_add(&c->ev, NULL);
 	event_set(&c->resp_ev, s, EV_WRITE | EV_PERSIST, slowcgi_response, c);
-	event_set(&c->tmo, s, 0, slowcgi_timeout, c);
-	event_add(&c->tmo, &timeout);
+	evtimer_set(&c->tmo, slowcgi_timeout, c);
+	evtimer_add(&c->tmo, &timeout);
 	requests->request = c;
 	SLIST_INSERT_HEAD(&slowcgi_proc.requests, requests, entry);
 }
@@ -1236,7 +1242,7 @@ syslog_err(int ecode, const char *fmt, ...)
 	va_list ap;
 
 	va_start(ap, fmt);
-	syslog_vstrerror(errno, LOG_EMERG, fmt, ap);
+	syslog_vstrerror(errno, LOG_CRIT, fmt, ap);
 	va_end(ap);
 	exit(ecode);
 }
@@ -1247,7 +1253,7 @@ syslog_errx(int ecode, const char *fmt, ...)
 	va_list ap;
 
 	va_start(ap, fmt);
-	vsyslog(LOG_WARNING, fmt, ap);
+	vsyslog(LOG_CRIT, fmt, ap);
 	va_end(ap);
 	exit(ecode);
 }
@@ -1258,7 +1264,7 @@ syslog_warn(const char *fmt, ...)
 	va_list ap;
 
 	va_start(ap, fmt);
-	syslog_vstrerror(errno, LOG_WARNING, fmt, ap);
+	syslog_vstrerror(errno, LOG_ERR, fmt, ap);
 	va_end(ap);
 }
 
@@ -1268,7 +1274,7 @@ syslog_warnx(const char *fmt, ...)
 	va_list ap;
 
 	va_start(ap, fmt);
-	vsyslog(LOG_WARNING, fmt, ap);
+	vsyslog(LOG_ERR, fmt, ap);
 	va_end(ap);
 }
 
