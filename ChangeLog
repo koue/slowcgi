@@ -1,0 +1,422 @@
+2018-08-19 12:31  florian
+
+	* usr.sbin/slowcgi/slowcgi.c: Call daemon with 0 as first argument
+	  so that it changes the cwd to /.  It is not a problem in slowcgi
+	  since it calls chroot(2) and then chdir(2) shortly afterwards but
+	  hopefully prevents copying code into daemons where it does
+	  matter.  Problem first observed by dlg in ntpd(8) which keeps
+	  sitting in the directory from where it was started which might
+	  for example prevent an unmount.  Discussed with deraadt@
+
+2018-08-13 16:54  florian
+
+	* usr.sbin/slowcgi/: slowcgi.8, slowcgi.c: Make the owner of fcgi
+	  socket configurable.
+
+	  Andrew Daugherity (andrew.daugherity AT gmail) pointed out that
+	  this is helpful for his port to linux. For example on openSUSE
+	  nginx and Apache run as different users so a compile time default
+	  user won't cut it.  Man page tweaks jmc@
+
+	  While here, consistently log users at debug level; from Andrew.
+
+2018-08-01 11:47  florian
+
+	* usr.sbin/slowcgi/slowcgi.8: Clarify that we chroot to the users
+	  home directory if -u is provided.  Pointed out by Andrew
+	  Daugherity (andrew.daugherity AT gmail), thanks! Tweaks and OK
+	  jmc
+
+2017-10-17 22:47  schwarze
+
+	* usr.sbin/slowcgi/slowcgi.8: add missing HISTORY; based on CVS
+	  logs and release announcements
+
+2017-07-04 12:48  florian
+
+	* usr.sbin/slowcgi/slowcgi.c: consistently use the evtimer wrappers
+	  around the connection timeout.
+
+	  this is instead of setting the timeout up with event_set and
+	  event_add, but removing it with evtimer_del. this uses
+	  evtimer_set and evtimer_add.
+
+	  prompted by dlg's commit to identd OK dlg
+
+2017-05-26 17:38  florian
+
+	* usr.sbin/slowcgi/slowcgi.c: Sync the severity of the syslog_*
+	  functions shared between identd, slowcgi, tftp-proxy and tftpd to
+	  the severity used in log.c style loggers.  This also fixes an
+	  issue where syslog_err and syslog_errx logged with different
+	  severities.
+
+	  Sure deraadt@
+
+2016-09-04 14:40  florian
+
+	* usr.sbin/slowcgi/slowcgi.c: Add format attribute to logger
+	  functions.  Fix format string while here.  Input & OK benno@
+
+2016-08-16 08:23  reyk
+
+	* usr.sbin/slowcgi/slowcgi.c: As suggested by the FastCGI spec,
+	  zero-pad the response buffers to be aligned to 8 bytes.  This
+	  matches what most other implementations are doing.  While here,
+	  make sure that the allocated response buffers are zero'ed out.
+
+	  OK florian@
+
+2015-11-20 09:04  tb
+
+	* usr.sbin/slowcgi/slowcgi.c: typo in error message: to -> too
+
+	  ok florian@
+
+2015-11-05 19:15  florian
+
+	* usr.sbin/slowcgi/slowcgi.c: pledge(2) for slowcgi.  After
+	  initialization slowcgi accepts from a AF_UNIX socket, forks and
+	  execs. After fork we only need to close(2), chdir(2) and exec.
+	  OK benno@
+
+2015-11-05 19:14  florian
+
+	* usr.sbin/slowcgi/slowcgi.c: re-shuffle slowcgi_listen to run less
+	  code as root.  OK benno@
+
+2015-09-25 20:15  millert
+
+	* usr.sbin/slowcgi/slowcgi.c: Output the contents of the
+	  environment in debug mode which is most helpful in debugging
+	  interactions between httpd and slowcgi.  OK florian@
+
+2015-01-22 18:22  florian
+
+	* usr.sbin/slowcgi/slowcgi.c: Clean up includes, while here fix a
+	  white space which lead to a false positive during grep'ing.  OK
+	  reyk
+
+2015-01-19 21:18  guenther
+
+	* usr.sbin/slowcgi/slowcgi.c: The kernel doesn't actually care what
+	  a sockaddr's sa_len is on input, so don't waste code setting it
+
+	  improvment and ok florian@
+
+2015-01-16 06:40  deraadt
+
+	* usr.sbin/slowcgi/slowcgi.c: Replace <sys/param.h> with <limits.h>
+	  and other less dirty headers where possible.	Annotate
+	  <sys/param.h> lines with their current reasons.  Switch to
+	  PATH_MAX, NGROUPS_MAX, HOST_NAME_MAX+1, LOGIN_NAME_MAX, etc.
+	  Change MIN() and MAX() to local definitions of MINIMUM() and
+	  MAXIMUM() where sensible to avoid pulling in the pollution.
+	  These are the files confirmed through binary verification.  ok
+	  guenther, millert, doug (helped with the verification protocol)
+
+2014-12-08 12:12  blambert
+
+	* usr.sbin/slowcgi/slowcgi.c: read(2) returns ssize_t, not size_t
+
+	  ok florian@
+
+2014-12-05 20:02  florian
+
+	* usr.sbin/slowcgi/Makefile: enable warnings
+
+2014-12-05 20:01  florian
+
+	* usr.sbin/slowcgi/slowcgi.c: Bail out if the buffer is too small
+	  to contain the length of a parameter value.  Found while
+	  investigating a dead store pointed out by llvm scan-build.
+
+2014-12-05 19:59  florian
+
+	* usr.sbin/slowcgi/slowcgi.c: dead stores; pointed out by llvm
+	  scan-build; no binary change
+
+2014-12-05 19:58  florian
+
+	* usr.sbin/slowcgi/slowcgi.c: pause shadows global; pointed out by
+	  gcc; no binary change
+
+2014-12-05 19:57  florian
+
+	* usr.sbin/slowcgi/slowcgi.c: mode is unused; pointed out by gcc;
+	  no binary change
+
+2014-12-05 19:56  florian
+
+	* usr.sbin/slowcgi/slowcgi.c: declare lerr and lerrx __dead;
+	  unconfuses llvm scan-build
+
+2014-09-19 21:28  florian
+
+	* usr.sbin/slowcgi/slowcgi.c: Instead of doing the fcntl(2) and
+	  ioctl(2) song and dance just tell socket(2) and accept4(2) that
+	  we want non-blocking-close-on-exec sockets.  OK benno@
+
+2014-08-28 08:09  jmc
+
+	* usr.sbin/slowcgi/slowcgi.8: fix previous, and add a SEE ALSO
+	  section for httpd;
+
+2014-08-26 20:03  robert
+
+	* usr.sbin/slowcgi/slowcgi.8: remove nginx references
+
+2014-07-13 21:46  claudio
+
+	* usr.sbin/slowcgi/slowcgi.c: Use lerrx instead of errx since the
+	  logging subsystem is already initialized.  OK florian@
+
+2014-06-10 14:38  florian
+
+	* usr.sbin/slowcgi/: slowcgi.8, slowcgi.c: Implement -u (user to
+	  drop privs to) and -p flag (path to chroot to).  This allows to
+	  run slowcgi non-chrooted with -p /, requested by at least
+	  ratchov@ and henning@.  Input by many, OK ratchov@ on a previous
+	  diff, "looks good" millert@, man page bits tweak and OK schwarze@
+	  (all some time ago); OK henning@
+
+2014-06-10 14:33  florian
+
+	* usr.sbin/slowcgi/: slowcgi.8, slowcgi.c: Cleanup socket creation.
+	  Input ajacoutot some time ago; OK henning@
+
+2014-04-16 14:43  florian
+
+	* usr.sbin/slowcgi/slowcgi.c: My previous attempt to chdir(2) to
+	  the directory containing the cgi script was not quite right.
+	  slowcgi would try to chdir("") with a SCRIPT_NAME of /foo.cgi;
+	  chdir("/") in that case.  I'm not sure how one would configure
+	  nginx/slowcgi to get to that point though.  OK benno@
+
+2014-04-14 19:25  florian
+
+	* usr.sbin/slowcgi/slowcgi.c: Calculate the length of name and
+	  value for parameters the right way around for the 4 byte
+	  encoding. With this QUERY_STRING can be longer than 127 bytes.
+	  Found the hard way while playing with smokeping.  OK benno@
+
+2014-04-13 08:46  florian
+
+	* usr.sbin/slowcgi/slowcgi.c: httpd(8) did a chdir(2) to the
+	  directory containing the cgi script. As there might be scripts
+	  depending on this do the same in slowcgi(8).
+
+	  pointed out and OK ratchov@
+
+2014-03-17 13:39  florian
+
+	* usr.sbin/slowcgi/slowcgi.c: jturner pointed out that if one wants
+	  to run cgi scripts outside /cgi-bin SCRIPT_NAME doesn't cut it.
+	  The spec says: "The SCRIPT_NAME variable MUST be set to a URL
+	  path". Use SCRIPT_FILENAME which can be an absolute filesystem
+	  path for these cases and fall back to using SCRIPT_NAME if
+	  SCRIPT_FILENAME is not present.  Details how to handle this
+	  worked out by jturner and sthen.  Based on an erlier diff by
+	  jturner.  Tested by jturner OK jturner, sthen
+
+2014-01-20 13:00  florian
+
+	* usr.sbin/slowcgi/slowcgi.8: Better explanation what slowcgi(8) is
+	  for.	Room for improvements pointed out by deraadt@ Tweaks/OK
+	  jmc@ OK deraadt@
+
+2014-01-19 12:47  deraadt
+
+	* usr.sbin/slowcgi/slowcgi.8: Wording improvements from Patrik
+	  Lundin
+
+2014-01-19 00:01  djm
+
+	* usr.sbin/slowcgi/slowcgi.c: fix reaper loop that could run
+	  indefinitely
+
+	  log execve() failures to syslog (very useful for debugging
+	  SCRIPT_NAME problems)
+
+	  ok florian@
+
+2013-12-12 10:48  florian
+
+	* usr.sbin/slowcgi/slowcgi.8: Make it clear that slowcgi(8) drops
+	  privileges to user www.  Pointed out some time ago by blambert.
+	  OK jmc, blambert
+
+2013-10-31 21:53  florian
+
+	* usr.sbin/slowcgi/slowcgi.c: Initialize sun_len, pointed out by
+	  deraadt@.  While there also check length of socket path, more
+	  relevant now since an alternative socket can be specified.  OK
+	  benno@
+
+2013-10-29 17:59  florian
+
+	* usr.sbin/slowcgi/slowcgi.c: Fix a potential file descriptor
+	  overlap in exec_cgi() by making sure that file descriptors zero
+	  to two are always open when starting slowcgi.  pointed out, with
+	  and looks good to deraadt@
+
+2013-10-23 15:29  florian
+
+	* usr.sbin/slowcgi/slowcgi.c: We need to loop around waitpid to
+	  catch all exited children as we are not guaranteed to get one
+	  signal per child.  pointed out by deraadt OK benno, blambert
+
+2013-10-21 18:19  florian
+
+	* usr.sbin/slowcgi/slowcgi.c: Do not leak fds in fork(2) error
+	  path.  pointed out by deraadt@
+
+2013-10-21 18:17  florian
+
+	* usr.sbin/slowcgi/slowcgi.c: Check for EINTR, too.  pointed out by
+	  deraadt@
+
+2013-10-21 18:16  florian
+
+	* usr.sbin/slowcgi/slowcgi.c: No need for volatile here.  pointed
+	  out by deraadt@
+
+2013-10-20 16:47  deraadt
+
+	* usr.sbin/slowcgi/slowcgi.c: spelling, spacing, etc
+
+2013-10-20 09:36  benno
+
+	* usr.sbin/slowcgi/slowcgi.c: reserve file descriptors for incoming
+	  connections so we will be able to actually run the cgi for them
+	  later on.  mirrored on relayd.  ok florian@ blambert@
+
+2013-10-19 14:18  florian
+
+	* usr.sbin/slowcgi/slowcgi.c: Keep track of which fds were closed
+	  before and only close those still open.  Otherwise if there are
+	  parallel requests and the timing is just right we were closing
+	  random fds from other connections.  OK blambert
+
+2013-10-18 14:48  florian
+
+	* usr.sbin/slowcgi/slowcgi.c: Do not fiddle with the response queue
+	  directly but go through a new slowcgi_add_response() function.
+	  This ensures that we always do an event_add.	OK blambert
+
+2013-10-18 14:47  florian
+
+	* usr.sbin/slowcgi/slowcgi.c: Logging to syslog works better with
+	  openlog(3).  OK blambert
+
+2013-10-18 14:46  florian
+
+	* usr.sbin/slowcgi/slowcgi.c: Use a dedicated socketpair for stdin,
+	  makes the code more symetric and gets rid of shutdown(2) which
+	  might cause problems.  OK blambert
+
+2013-10-18 14:44  florian
+
+	* usr.sbin/slowcgi/slowcgi.c: Calculate correct pointer for
+	  fcgi_{begin,end}_request_body.  input / OK blambert
+
+2013-10-18 14:43  florian
+
+	* usr.sbin/slowcgi/slowcgi.c: Calculate correct pointer for
+	  end_request; while there initialize reserved to zero.  OK
+	  blambert
+
+2013-10-18 14:42  florian
+
+	* usr.sbin/slowcgi/slowcgi.c: set FD_CLOEXEC OK blambert
+
+2013-09-19 09:21  blambert
+
+	* usr.sbin/slowcgi/slowcgi.c: adjust the names to more accurately
+	  reflect the names of structs and functions as they relate to the
+	  FastCGI protocol
+
+	  style(9)ize some function declarations while here
+
+	  ok florian@
+
+2013-09-11 09:31  blambert
+
+	* usr.sbin/slowcgi/slowcgi.c: Sprinkle some comments which clarify
+	  the protocol/process flow.
+
+	  ok florian@
+
+2013-09-06 12:17  blambert
+
+	* usr.sbin/slowcgi/slowcgi.c: When dumping FastCGI protocol headers
+	  during debug, dump the "request begin" and "request end" protocol
+	  entries in addition
+
+	  While here, make the "FastCGI request body" struct's name more
+	  precise (fcgi_end_request -> fcgi_end_request_body).
+
+	  okay florian@
+
+2013-09-06 07:36  blambert
+
+	* usr.sbin/slowcgi/slowcgi.c: Use the correct buffer size for
+	  memory allocation and reads.
+
+	  okay florian@
+
+2013-08-30 07:10  blambert
+
+	* usr.sbin/slowcgi/slowcgi.c: If the CGI script died due to receipt
+	  of signal, pass that back to the HTTP frontend as the
+	  "application return status".
+
+	  While here, add a pair of informative debugging statements.
+
+	  ok florian@
+
+2013-08-26 08:02  blambert
+
+	* usr.sbin/slowcgi/: slowcgi.8, slowcgi.c: slowcgi grows an option
+	  to specify an alternate FastCGI socket on which to listen.
+
+	  okay dcoppa@, henning@, florian@
+
+	  manpage okay from jmc@
+
+2013-08-23 07:12  blambert
+
+	* usr.sbin/slowcgi/slowcgi.c: Give slowcgi a style(9) scrubbing. No
+	  functional change.
+
+	  ok florian@
+
+2013-06-02 14:11  florian
+
+	* usr.sbin/slowcgi/: slowcgi.8, slowcgi.c: move bgplg and slowcgi
+	  sockets to /var/www/run input reyk@, guenther@ "move fast"
+	  deraadt@ OK naddy@
+
+2013-05-23 16:23  jmc
+
+	* usr.sbin/slowcgi/slowcgi.8: tweaks; ok florian
+
+2013-05-23 16:13  florian
+
+	* usr.sbin/slowcgi/slowcgi.c: off by one, from Henri Kemppainen
+	  <duclare-at-guu.fi>, thanks!
+
+2013-05-23 13:03  jasper
+
+	* usr.sbin/slowcgi/slowcgi.c: Fix pasto where 'c' instead of
+	  'clients' is checked for NULL and add missing free for the
+	  fcgi_response.
+
+	  ok florian@
+
+2013-05-23 12:03  florian
+
+	* usr.sbin/slowcgi/: Makefile, slowcgi.8, slowcgi.c: Put slowcgi(8)
+	  a FastCGI to CGI wrapper in to work on it in tree.  Not hooked up
+	  to the build yet.  OK sthen@, deraadt@ agrees
+
