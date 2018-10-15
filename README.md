@@ -1,4 +1,4 @@
-#### FreeBSD port of OpenBSD slowcgi ####
+# FreeBSD port of OpenBSD slowcgi
 
 slowcgi is a server which implements the FastCGI Protocol to execute CGI
 scripts. FastCGI was designed to overcome the CGI protocol's scalability
@@ -12,13 +12,16 @@ back to the FastCGI protocol.
 
 http://cvsweb.openbsd.org/cgi-bin/cvsweb/src/usr.sbin/slowcgi/
 
-## Compilation
+## Installation
 
-cd src/usr.sbin/slowcgi/ && make
+### Requirements
+* libevent
+
+`cd src/usr.sbin/slowcgi/ && make && make install`
 
 ## Usage
 
-slowcgi -p /var/www -s /var/www/run/slowcgi.sock -u www
+`slowcgi -p /var/www -s /var/www/run/slowcgi.sock -u www`
 
 ## Status
 
