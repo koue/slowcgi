@@ -11,3 +11,17 @@ protocol. It executes the requested CGI script and translates its output
 back to the FastCGI protocol.
 
 http://cvsweb.openbsd.org/cgi-bin/cvsweb/src/usr.sbin/slowcgi/
+
+## Compilation
+
+cd src/usr.sbin/slowcgi/ && make
+
+## Usage
+
+slowcgi -p /var/www -s /var/www/run/slowcgi.sock -u www
+
+## Status
+
+master | develop
+-------|--------
+[![Build Status](https://cipier.net/status/koue/slowcgi/master)](https://cipier.net/status/koue/slowcgi/master) | [![Build Status](https://cipier.net/status/koue/slowcgi/develop)](https://cipier.net/status/koue/slowcgi/develop)
