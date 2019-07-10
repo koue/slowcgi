@@ -1,3 +1,11 @@
+2018-10-19 08:13  claudio
+
+	* usr.sbin/slowcgi/slowcgi.c: When calculating the fd limit before
+	  accepting a new connection also account for the inflight fds
+	  caused by the new connection. Without this slowcgi could fail
+	  when close to the limit because FD_RESERVE is smaller then
+	  FD_NEEDED.  OK florian@, tested by Kristaps Dzonsons
+
 2018-08-19 12:31  florian
 
 	* usr.sbin/slowcgi/slowcgi.c: Call daemon with 0 as first argument
