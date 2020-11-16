@@ -1,3 +1,17 @@
+2020-05-11 10:40  claudio
+
+	* usr.sbin/slowcgi/slowcgi.c: Allow specifying -d multiple times.
+	  Only print the fcgi header data if debug > 1 (-dd) since it adds
+	  a lot of noise to the output.  In syslog_debug do not check for
+	  the debug variable instead let syslog handle it. Currently
+	  syslog_debug() would never print anything since it is only called
+	  with debug = 0 (debug > 0 implies the console logger).  OK
+	  florian@
+
+2020-05-08 07:41  claudio
+
+	* usr.sbin/slowcgi/slowcgi.c: Just a bit of KNF.  OK florian@
+
 2018-10-19 08:13  claudio
 
 	* usr.sbin/slowcgi/slowcgi.c: When calculating the fd limit before
