@@ -1,0 +1,6 @@
+.depend
+*.debug
+*.full
+*.gz
+*.o
+src/usr.sbin/slowcgi/slowcgi

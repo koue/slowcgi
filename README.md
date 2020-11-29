@@ -14,10 +14,7 @@ http://cvsweb.openbsd.org/cgi-bin/cvsweb/src/usr.sbin/slowcgi/
 
 ## Installation
 
-### Requirements
-* libevent
-
-`cd src/usr.sbin/slowcgi/ && make && make install`
+`make && make install`
 
 ## Usage
 

@@ -1,0 +1,4 @@
+[submodule "libevent"]
+	path = libevent
+	url = https://github.com/koue/libevent
+	ignore = dirty
