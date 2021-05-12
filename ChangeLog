@@ -1,3 +1,22 @@
+2021-04-20 07:35  claudio
+
+	* usr.sbin/slowcgi/slowcgi.c: Use LIST instead of SLIST for
+	  requests. The way SLIST_REMOVE was used did a double traverse of
+	  the list which now is replaced with no traversal at all.  Also
+	  stop double wrapping requests just for the list.  OK millert@
+
+2021-04-20 07:32  claudio
+
+	* usr.sbin/slowcgi/slowcgi.c: Ignore SIGPIPE by default and restore
+	  default behaviour before executing the CGI.  OK bluhm@ florian@
+
+2021-01-08 22:05  millert
+
+	* usr.sbin/slowcgi/slowcgi.c: accept_reserve() counter function
+	  argument doesn't need to be volatile.  Revision 1.21 removed the
+	  volatile from the cgi_inflight global but accept_reserve() was
+	  not updated to match.  OK florian@
+
 2020-05-11 10:40  claudio
 
 	* usr.sbin/slowcgi/slowcgi.c: Allow specifying -d multiple times.
