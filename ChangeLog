@@ -1,3 +1,15 @@
+2021-09-02 14:14  jmc
+
+	* usr.sbin/slowcgi/: slowcgi.8, slowcgi.c: list -v with -d in
+	  SYNOPSIS, instead of seperately, and add -v to usage();
+
+2021-09-02 13:18  florian
+
+	* usr.sbin/slowcgi/: slowcgi.8, slowcgi.c: Stop sending debug
+	  logging to syslog (which would then drop it on the floor) all the
+	  time. Instead debug logging must be requested with the new -v
+	  flag.  Problem reported and fix provided by weerd@
+
 2021-04-20 07:35  claudio
 
 	* usr.sbin/slowcgi/slowcgi.c: Use LIST instead of SLIST for
