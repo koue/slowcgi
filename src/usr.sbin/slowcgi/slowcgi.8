@@ -1,4 +1,4 @@
-.\"   $OpenBSD: slowcgi.8,v 1.14 2018/08/13 16:54:50 florian Exp $
+.\"   $OpenBSD: slowcgi.8,v 1.16 2021/09/02 14:14:44 jmc Exp $
 .\"
 .\" Copyright (c) 2013 Florian Obser <florian@openbsd.org>
 .\"
@@ -14,7 +14,7 @@
 .\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd $Mdocdate: August 13 2018 $
+.Dd $Mdocdate: September 2 2021 $
 .Dt SLOWCGI 8
 .Os
 .Sh NAME
@@ -22,7 +22,7 @@
 .Nd a FastCGI to CGI wrapper server
 .Sh SYNOPSIS
 .Nm
-.Op Fl d
+.Op Fl dv
 .Op Fl p Ar path
 .Op Fl s Ar socket
 .Op Fl U Ar user
@@ -90,6 +90,8 @@ instead of default user www and
 to
 the home directory of
 .Ar user .
+.It Fl v
+Enable more verbose (debug) logging.
 .El
 .Sh SEE ALSO
 .Xr httpd 8
