@@ -17,7 +17,8 @@ GH_TAGNAME=	${LIBEVENT_VERSION}:libevent
 USES=		uidfix
 USE_RC_SUBR=	slowcgi
 
-CFLAGS+=	-I${WRKSRC_libevent}/src/lib/libevent
+CFLAGS+=	-fPIC \
+			-I${WRKSRC_libevent}/src/lib/libevent
 
 LDFLAGS+=	-L${WRKSRC_libevent}/src/lib/libevent
 
