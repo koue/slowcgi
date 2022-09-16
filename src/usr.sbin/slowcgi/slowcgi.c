@@ -1,4 +1,4 @@
-/*	$OpenBSD: slowcgi.c,v 1.62 2021/09/02 14:14:44 jmc Exp $ */
+/*	$OpenBSD: slowcgi.c,v 1.64 2022/08/07 07:43:53 op Exp $ */
 /*
  * Copyright (c) 2013 David Gwynne <dlg@openbsd.org>
  * Copyright (c) 2013 Florian Obser <florian@openbsd.org>
@@ -43,6 +43,7 @@
 #include "getdtablecount.h"
 
 #define TIMEOUT_DEFAULT		 120
+#define TIMEOUT_MAX		 (86400 * 365)
 #define SLOWCGI_USER		 "www"
 
 #define FCGI_CONTENT_SIZE	 65535
@@ -264,8 +265,8 @@ usage(void)
 {
 	extern char *__progname;
 	fprintf(stderr,
-	    "usage: %s [-dv] [-p path] [-s socket] [-U user] [-u user]\n",
-	    __progname);
+	    "usage: %s [-dv] [-p path] [-s socket] [-t timeout] [-U user] "
+	    "[-u user]\n", __progname);
 	exit(1);
 }
 
@@ -287,6 +288,7 @@ main(int argc, char *argv[])
 	const char	*chrootpath = NULL;
 	const char	*sock_user = SLOWCGI_USER;
 	const char	*slowcgi_user = SLOWCGI_USER;
+	const char	*errstr;
 
 	/*
 	 * Ensure we have fds 0-2 open so that we have no fd overlaps
@@ -305,7 +307,7 @@ main(int argc, char *argv[])
 		}
 	}
 
-	while ((c = getopt(argc, argv, "dp:s:U:u:v")) != -1) {
+	while ((c = getopt(argc, argv, "dp:s:t:U:u:v")) != -1) {
 		switch (c) {
 		case 'd':
 			debug++;
@@ -315,6 +317,12 @@ main(int argc, char *argv[])
 			break;
 		case 's':
 			fcgi_socket = optarg;
+			break;
+		case 't':
+			timeout.tv_sec = strtonum(optarg, 1, TIMEOUT_MAX, 
+			    &errstr);
+			if (errstr != NULL)
+				errx(1, "timeout is %s: %s", errstr, optarg);
 			break;
 		case 'U':
 			sock_user = optarg;
