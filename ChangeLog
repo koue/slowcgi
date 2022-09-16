@@ -1,3 +1,16 @@
+2022-08-07 07:43  op
+
+	* usr.sbin/slowcgi/slowcgi.c: zap extra space in usage added by
+	  mistake in last commit.
+
+2022-08-06 17:11  op
+
+	* usr.sbin/slowcgi/: slowcgi.8, slowcgi.c: add a -t flag to change
+	  the request timeout
+
+	  original diff from Alfred Morgan (alfred [at] 54 dot org) ok
+	  florian@ and manpage tweaks by me.
+
 2021-09-02 14:14  jmc
 
 	* usr.sbin/slowcgi/: slowcgi.8, slowcgi.c: list -v with -d in
