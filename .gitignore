@@ -3,4 +3,5 @@
 *.full
 *.gz
 *.o
+*.pieo
 src/usr.sbin/slowcgi/slowcgi
