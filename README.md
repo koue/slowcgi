@@ -14,14 +14,11 @@ http://cvsweb.openbsd.org/cgi-bin/cvsweb/src/usr.sbin/slowcgi/
 
 ## Installation
 
-`make && make install`
+```
+git submodule update --init
+make && make install
+```
 
 ## Usage
 
 `slowcgi -p /var/www -s /var/www/run/slowcgi.sock -u www`
-
-## Status
-
-master | develop
--------|--------
-[![Build Status](https://cipier.net/status/koue/slowcgi/master)](https://cipier.net/status/koue/slowcgi/master) | [![Build Status](https://cipier.net/status/koue/slowcgi/develop)](https://cipier.net/status/koue/slowcgi/develop)
