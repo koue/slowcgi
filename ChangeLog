@@ -1,3 +1,19 @@
+2026-05-31 11:26  claudio
+
+	* usr.sbin/slowcgi/slowcgi.c: Don't fail hard on version mismatch
+	  and ignore extra end-of-params messages.
+
+	  Replace the lerrx on version mismatch with a lwarnx and error
+	  return.  Switch to ssize_t return for that so that
+	  slowcgi_request() can properly fail when this happens.
+
+	  Also do not execute multiple commands when extra end-of-params
+	  messages are received. Once a command is executed fail to start a
+	  2nd one.
+
+	  Same diff as bgplgd rev. 1.9 Reported by Frank Denis OK florian@
+	  tb@
+
 2022-08-07 07:43  op
 
 	* usr.sbin/slowcgi/slowcgi.c: zap extra space in usage added by
